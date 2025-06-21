@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>全角符号检测工具</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #f0f4f8, #e0eafc);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background-color: #ffffff;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .note {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    input[type="file"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    #result {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      padding: 15px;
+      min-height: 100px;
+      background-color: #fafafa;
+      border-radius: 8px;
+    }
+
+    .full-width-symbol {
+      background-color: #fff3cd;
+      padding: 2px 4px;
+      border-radius: 4px;
+      color: #856404;
+      font-family: monospace;
+      display: inline-block;
+      margin: 0 2px;
+    }
+
+    p {
+      margin: 8px 0;
+      font-size: 14px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>全角符号检测工具</h1>
+    <div class="note">说明：全角空格符使用「x」表示</div>
+    <input type="file" id="fileInput" accept=".txt,.java,.cs,.sql" />
+    <div id="result">请选择一个文本文件进行检测</div>
+  </div>
+
+  <script>
+    const fullWidthSymbols = [
+      '\u3000', // 全角空格
+      '\uFF0C', // 全角逗号
+      '\uFF0E', // 全角句号
+      '\uFF1A', // 全角冒号
+      '\uFF1B', // 全角分号
+      '\uFF08', // 全角左括号
+      '\uFF09', // 全角右括号
+      '\uFF01', // 全角感叹号
+      '\uFF1F', // 全角问号
+      '\u3001', // 全角顿号
+      '\uFF3B', // 全角左方括号
+      '\uFF3D', // 全角右方括号
+      '\u300C', // 全角左书名号
+      '\u300D', // 全角右书名号
+      '\u2026', // 全角省略号
+      '\u201C', // 全角左引号
+      '\u201D', // 全角右引号
+      '\u2018', // 全角左单引号
+      '\u2019', // 全角右单引号
+      '\u2014', // 全角破折号
+      '\uFF1D', // 全角等号
+      '\u2260', // 全角不等号
+      '\u300B', // 全角间隔号
+      '\uFF5B', // 全角左大括号
+      '\uFF5D'  // 全角右大括号
+    ];
+
+    document.getElementById('fileInput').addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const content = e.target.result;
+        const lines = content.split('\n');
+        const results = [];
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (fullWidthSymbols.includes(char)) {
+              results.push({ line: i + 1, char: char });
+            }
+          }
+        }
+
+        displayResults(results);
+      };
+
+      reader.readAsText(file);
+    });
+
+    function displayResults(results) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '';
+
+      if (results.length === 0) {
+        resultDiv.textContent = '未发现全角符号';
+        return;
+      }
+
+      results.forEach(item => {
+        const p = document.createElement('p');
+        const lineText = `第${item.line}行发现全角符号：`;
+        const charText = item.char === '\u3000' ? 'x' : item.char;
+        const span = document.createElement('span');
+        span.className = 'full-width-symbol';
+        span.textContent = charText;
+        p.textContent = lineText;
+        p.appendChild(span);
+        resultDiv.appendChild(p);
+      });
+    }
+  </script>
+</body>
+</html>

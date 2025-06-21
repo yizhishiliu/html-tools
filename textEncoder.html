@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>编码与换行符检测工具</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 30px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    input[type="file"], input[type="text"] {
+      margin-bottom: 15px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 100%;
+    }
+    select, button {
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 100%;
+    }
+    button {
+      background-color: #007BFF;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #results {
+      margin-top: 20px;
+    }
+    .file-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .file-list li {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      margin-bottom: 5px;
+    }
+    .file-list li:last-child {
+      border-bottom: none;
+    }
+    .info {
+      font-size: 0.9em;
+      color: #666;
+    }
+    .stats {
+      font-size: 1.1em;
+      color: #333;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>编码与换行符检测工具</h1>
+    <input type="file" id="folderInput" webkitdirectory multiple>
+    <br>
+    <input type="text" id="suffixInput" placeholder="输入文件后缀（如 .txt,.js）">
+    <br>
+    <label>目标编码:
+      <select id="encodingSelect">
+        <option value="utf-8">UTF-8</option>
+        <option value="gbk">GBK</option>
+      </select>
+    </label>
+    <label>目标换行符:
+      <select id="eolSelect">
+        <option value="\n">LF (\n)</option>
+        <option value="\r\n">CRLF (\r\n)</option>
+        <option value="\r">CR (\r)</option>
+      </select>
+    </label>
+    <br>
+    <button onclick="processFiles()">检测文件</button>
+    <div id="results"></div>
+    <p style="font-size: 0.8em; color: #999; margin-top: 10px;">
+      ⚠️ 注意：文件编码无法准确检测，此处显示为“非目标编码”。
+    </p>
+  </div>
+
+  <script>
+    async function processFiles() {
+      const folderInput = document.getElementById('folderInput');
+      const suffixInput = document.getElementById('suffixInput').value.trim();
+      const encoding = document.getElementById('encodingSelect').value;
+      const eol = document.getElementById('eolSelect').value;
+      const files = folderInput.files;
+      const results = [];
+
+      const suffixes = suffixInput
+        ? suffixInput
+          .split(',')
+          .map(s => s.trim().toLowerCase())
+          .filter(s => s !== '')
+          .map(s => s.startsWith('.') ? s : `.${s}`)
+        : [];
+
+      for (const file of files) {
+        try {
+          const content = await readFileContent(file);
+          const currentEOL = detectEOL(content);
+          const currentEncoding = `非${encoding}编码`; // 修改为“非XX编码”
+
+          const fileName = file.name;
+          const fileSuffix = fileName.split('.').pop().toLowerCase();
+          const isMatchedSuffix = suffixes.length === 0 || suffixes.includes(`.${fileSuffix}`);
+
+          if (isMatchedSuffix && currentEOL !== eol) {
+            const filePath = file.webkitRelativePath || file.name;
+            results.push({
+              path: filePath,
+              currentEOL: currentEOL,
+              targetEOL: eol,
+              targetEncoding: encoding,
+              currentEncoding: currentEncoding
+            });
+          }
+        } catch (err) {
+          console.error(`处理文件 ${file.name} 时出错:`, err);
+        }
+      }
+
+      displayResults(results, files.length);
+    }
+
+    function readFileContent(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+    }
+
+    function detectEOL(content) {
+      const cr = content.includes('\r') ? '\r' : null;
+      const lf = content.includes('\n') ? '\n' : null;
+      if (cr && lf) return '\r\n'; // CRLF
+      if (cr) return '\r';         // CR
+      if (lf) return '\n';         // LF
+      return '无换行符';           // 无换行符
+    }
+
+    function formatEOL(eol) {
+      if (eol === '\r\n') return 'CRLF (\r\n)';
+      if (eol === '\n') return 'LF (\n)';
+      if (eol === '\r') return 'CR (\r)';
+      if (eol === '无换行符') return '无换行符';
+      return eol; // 默认情况（例如空字符串）
+    }
+
+    function displayResults(files, totalFiles) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+      const detectedCount = files.length;
+
+      // 显示统计信息
+      const statsDiv = document.createElement('div');
+      statsDiv.className = 'stats';
+      statsDiv.innerHTML = `共检查 ${totalFiles} 个文件，发现 ${detectedCount} 个不符合要求的文件。`;
+      resultsDiv.appendChild(statsDiv);
+
+      if (detectedCount === 0) {
+        resultsDiv.innerHTML += '<p>没有不符合要求的文件。</p>';
+        return;
+      }
+
+      const ul = document.createElement('ul');
+      ul.className = 'file-list';
+
+      files.forEach(file => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>路径:</strong> ${file.path}<br>
+          <span class="info"><strong>当前编码:</strong> ${file.currentEncoding}</span><br>
+          <span class="info"><strong>当前换行符:</strong> ${formatEOL(file.currentEOL)}</span><br>
+          <span class="info"><strong>目标编码:</strong> ${file.targetEncoding}</span><br>
+          <span class="info"><strong>目标换行符:</strong> ${formatEOL(file.targetEOL)}</span>
+        `;
+        ul.appendChild(li);
+      });
+
+      resultsDiv.appendChild(ul);
+    }
+  </script>
+</body>
+</html>

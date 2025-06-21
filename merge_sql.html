@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>SQL 文件合并工具</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 400px;
+      margin-top: 10px;
+      font-family: monospace;
+    }
+    button {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>SQL 文件合并工具</h2>
+  <p>请选择多个 .sql 文件：</p>
+  <input type="file" id="fileInput" multiple accept=".sql">
+  <button onclick="copyContent()">📋 复制合并内容</button>
+  <textarea id="output" readonly placeholder="合并后的内容会显示在这里..."></textarea>
+
+  <script>
+    document.getElementById('fileInput').addEventListener('change', async function(event) {
+      const files = event.target.files;
+      let combinedContent = '';
+
+      for (let file of files) {
+        if (!file.name.endsWith('.sql')) {
+          alert(`跳过非 .sql 文件：${file.name}`);
+          continue;
+        }
+
+        const text = await file.text();
+        combinedContent += "-- 文件名：" + file.name + "\n";
+        combinedContent += text + "\n\n";
+      }
+
+      document.getElementById('output').value = combinedContent;
+    });
+
+    function copyContent() {
+      const output = document.getElementById('output');
+      output.select();
+      document.execCommand('copy');
+      alert("✅ 内容已复制到剪贴板！");
+    }
+  </script>
+
+</body>
+</html>
