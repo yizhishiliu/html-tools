@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- @author <a href="https://github.com/yizhishiliu">一之十六</a> -->
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -94,6 +95,7 @@
     </label>
     <br>
     <button onclick="processFiles()">检测文件</button>
+    <button onclick="copyResults()">复制结果</button>
     <div id="results"></div>
     <p style="font-size: 0.8em; color: #999; margin-top: 10px;">
       ⚠️ 注意：文件编码无法准确检测，此处显示为“非目标编码”。
@@ -204,6 +206,19 @@
 
       resultsDiv.appendChild(ul);
     }
+	
+	function copyResults() {
+      const resultsDiv = document.getElementById('results');
+      const textToCopy = resultsDiv.innerText || resultsDiv.textContent;
+     
+      if (textToCopy) {
+        navigator.clipboard.writeText(textToCopy)
+          .then(() => alert("结果已复制到剪贴板！"))
+          .catch(err => console.error('无法复制文本: ', err));
+      } else {
+        alert("没有可复制的内容！");
+    }
+}
   </script>
 </body>
 </html>
