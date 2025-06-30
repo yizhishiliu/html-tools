@@ -11,5 +11,4 @@
 
 - excel_tool
 保存当前打开的所有 excel 路径名，关闭 excel 或电脑重启后，一键打开之前的所有 excel！
-
-需要 python 环境，'pip install pywin32'
+    需要 python 环境，'''pip install pywin32'''
